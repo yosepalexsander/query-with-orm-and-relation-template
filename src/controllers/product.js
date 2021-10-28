@@ -1,5 +1,5 @@
 // import necessary model here
-const { product, user } = require("../../models");
+const { product, user, category, productCategory } = require("../../models");
 
 exports.getProduct = async (req, res) => {
   try {
@@ -12,7 +12,18 @@ exports.getProduct = async (req, res) => {
             exclude: ["createdAt", "updatedAt", "password"],
           },
         },
-        // code here
+        {
+          model: category,
+          as: "categories",
+          through: {
+            model: productCategory,
+            as: "bridge",
+            attributes: [],
+          },
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
       ],
       attributes: {
         exclude: ["createdAt", "updatedAt", "idUser"],
@@ -34,7 +45,61 @@ exports.getProduct = async (req, res) => {
 
 exports.addProduct = async (req, res) => {
   try {
-    // code here
+    const { category: categoryName, ...data } = req.body;
+    const newProduct = await product.create(data);
+    const categoryData = await category.findOne({
+      where: {
+        name: categoryName,
+      },
+    });
+
+    if (categoryData) {
+      await productCategory.create({
+        idCategory: categoryData.id,
+        idProduct: newProduct.id,
+      });
+    } else {
+      const newCategory = await category.create({ name: categoryName });
+      await productCategory.create({
+        idCategory: newCategory.id,
+        idProduct: newProduct.id,
+      });
+    }
+
+    const createdProduct = await product.findOne({
+      where: {
+        id: newProduct.id,
+      },
+      include: [
+        {
+          model: user,
+          as: "user",
+          attributes: {
+            exclude: ["createdAt", "updatedAt", "password"],
+          },
+        },
+        {
+          model: category,
+          as: "categories",
+          through: {
+            model: productCategory,
+            as: "bridge",
+            attributes: [],
+          },
+          attributes: {
+            exclude: ["createdAt", "updatedAt"],
+          },
+        },
+      ],
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "idUser"],
+      },
+    });
+
+    res.send({
+      status: "success",
+      createdProduct,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).send({
