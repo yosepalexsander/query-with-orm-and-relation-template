@@ -8,7 +8,25 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // code here
+      transaction.belongsTo(models.user, {
+        as: "buyer",
+        foreignKey: {
+          name: "idBuyer",
+        },
+      });
+
+      transaction.belongsTo(models.user, {
+        as: "seller",
+        foreignKey: {
+          name: "idSeller",
+        },
+      });
+      transaction.belongsTo(models.product, {
+        as: "product",
+        foreignKey: {
+          name: "idProduct",
+        },
+      });
     }
   }
   transaction.init(
